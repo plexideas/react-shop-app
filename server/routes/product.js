@@ -1,0 +1,80 @@
+const express = require('express');
+const multer = require('multer');
+const path = require('path')
+
+const { Product } = require('../models/Product');
+const { auth } = require("../middleware/auth");
+
+const router = express.Router();
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'uploads/');
+  },
+  filename: (req, file, cb) => {
+    cb(null, `${Date.now()}_${file.originalname}`)
+  },
+  fileFilter: (req, file, cb) => {
+    const ext = path.extname(file.originalname);
+    if (ext !== '.jpg' || ext !== '.jpeg' || ext !== '.png') {
+      return cb(res.status(400).end('only jpg, jpeg and png are allowed'), false);
+    }
+    cb(null, true)
+  }
+});
+
+const upload = multer({ storage: storage }).single('file');
+
+//=================================
+//             Product
+//=================================
+
+router.post("/uploadImage", auth, (req, res) => {
+  upload(req, res, err => {
+    if (err) {
+      return res.json({ success: false, err });
+    }
+    return res.json({
+      success: true,
+      image: res.req.file.path,
+      filename: res.req.file.filename
+    });
+  })
+});
+
+router.post("/uploadProdutc", auth, (req, res) => {
+  const product = new Product(req.body);
+
+  product.save((err) => {
+    if (err) {
+      return res.status(400).json({ success: false, err });
+    }
+    return res.status(200).json({ success: true })
+  })
+});
+
+router.post("/getProducts", auth, (req, res) => {
+
+  let order = req.body.order ? req.body.order : "desc";
+  let sortBy = req.body.sortBy ? req.body.sortBy : "_id";
+  let limit = req.body.limit ? parseInt(req.body.limit) : 100;
+  let skip = parseInt(req.body.skip)
+
+  Product.find()
+    .populate('writer')
+    .sort([[sortBy, order]])
+    .skip(skip)
+    .limit(limit)
+    .exec((err, products) => {
+      if (err) {
+        return res.status(400).json({ success: false, err });
+      }
+      res.status(200).json({
+        success: true,
+        products,
+        postSize: products.length
+      });
+    });
+});
+
+module.exports = router;
