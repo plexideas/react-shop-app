@@ -1,8 +1,11 @@
 import React, { useEffect, useState } from 'react'
 import Axios from 'axios'
 import { Icon, Button, Row, Col, Card } from 'antd';
-import Meta from 'antd/lib/card/Meta';
 import ImageSlider from '../../utils/ImageSlider'
+import CheckBox from './Sections/CheckBox';
+import RadioBox from './Sections/RadioBox';
+import { continents, price } from './Sections/Datas';
+import SearchFeature from './Sections/SearchFeature';
 
 function LandingPage() {
 
@@ -10,16 +13,33 @@ function LandingPage() {
   const [Skip, setSkip] = useState(0);
   const [Limit, setLimit] = useState(8);
   const [PostSize, setPostSize] = useState(0);
+  const [SearchTerms, setSearchTerms] = useState("")
+  const [Filters, setFilters] = useState({
+    continents: [],
+    price: [],
+  });
+
+  useEffect(() => {
+    const variables = {
+      skip: Skip,
+      limit: Limit,
+    }
+
+    getProducts(variables)
+  }, []);
 
   const getProducts = (variables) => {
     Axios.post('/api/product/getProducts', variables)
       .then(response => {
         if (response.data.success) {
-
-          setProducts([
-            ...Products,
-            ...response.data.products
-          ]);
+          if (variables && variables.loadMore) {
+            setProducts([
+              ...Products,
+              ...response.data.products
+            ]);
+          } else {
+            setProducts(response.data.products);
+          }
           setPostSize(response.data.postSize);
         } else {
           alert('Failed to fetch product data')
@@ -27,37 +47,33 @@ function LandingPage() {
       })
   }
 
-  useEffect(() => {
-    const variables = {
-      skip: Skip,
-      limit: Limit
-    }
-
-    getProducts(variables)
-  }, [])
-
   const onLoadMore = (event) => {
     let skip = Skip + Limit;
 
     const variables = {
       skip,
-      limit: Limit
+      limit: Limit,
+      loadMore: true,
     }
     
     getProducts(variables)
 
     setSkip(skip);
-  }
+  };
 
-  const renderCard = Products.map((product, index) => {
-    const { title,  price } = product
+  const renderCards = Products.map((product, index) => {
+    const { title,  price, _id } = product
     return (
       <Col lg={6} md={8} xs={24} key={index}>
         <Card
           hoverable={true}
-          cover={<ImageSlider images={product.images} />}
+          cover={
+            <a href={`/product/${_id}`}>
+              <ImageSlider images={product.images} />
+            </a>
+          }
         >
-          <Meta 
+          <Card.Meta 
             title={title}
             description={`$${price}`}
           />
@@ -65,6 +81,48 @@ function LandingPage() {
       </Col>
     )
   })
+
+  const showFilteredResults = (filters) => {
+
+    const variables = {
+      skip: 0,
+      limit: Limit,
+      filters: filters
+    }
+
+    getProducts(variables)
+    setSkip(0);
+  }
+
+  const handlePrice = (value) => price[value].array;
+
+  const handleFilters = (filters, category) => {
+    const newFilters = { ...Filters };
+    newFilters[category] = filters;
+
+    if (category === "price") {
+      newFilters[category] = handlePrice(filters);
+    }
+
+    showFilteredResults(newFilters);
+
+    setFilters(newFilters);
+  }
+
+  const updateSearchTerms = (newSearchTerm) => {
+    setSearchTerms(newSearchTerm);
+
+    const variables = {
+      skip: 0,
+      limit: Limit,
+      filters: Filters,
+      searchTerm: newSearchTerm,
+    }
+
+    setSkip(0);
+
+    getProducts(variables);
+  }
 
   return (
     <div
@@ -79,12 +137,38 @@ function LandingPage() {
 
       {/* Filter */}
 
+      <Row gutter={[16, 16]}>
+        <Col lg={12} xs={24}>
+          <CheckBox
+            list={ continents }
+            handleFilters={filters => handleFilters(filters, "continents")}
+          />
+        </Col>
+        <Col lg={12} xs={24}>
+          <RadioBox
+            list={ price }
+            handleFilters={filters => handleFilters(filters, "price")}
+          />
+        </Col>
+      </Row>
+
       {/* Search */}
+
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'flex-end',
+          margin: '1rem auto'
+        }}
+      >
+        <SearchFeature
+          refreshFunction={updateSearchTerms}
+        />
+      </div>
 
       {
         Products.length === 0
-        ? 
-          <div
+        ? <div
             style={{
               display: 'flex',
               height: '300px',
@@ -94,10 +178,9 @@ function LandingPage() {
           >
             <h2>No post yet... </h2>
           </div>
-        : 
-          <div>
+        : <div>
             <Row gutter={[16, 16]}>
-              { renderCard }
+              { renderCards }
             </Row>
           </div>
       }
@@ -112,4 +195,4 @@ function LandingPage() {
   )
 }
 
-export default LandingPage
+export default LandingPage;

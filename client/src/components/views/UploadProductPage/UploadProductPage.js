@@ -6,38 +6,38 @@ import Axios from 'axios';
 const { Title } = Typography;
 const { TextArea } = Input;
 
-const Contitnents = [
+const Continents = [
   { key: 1, value: "Africa" },
-  { key: 2, value: "Europa" },
+  { key: 2, value: "Europe" },
   { key: 3, value: "Asia" },
   { key: 4, value: "North America" },
   { key: 5, value: "South America" },
   { key: 6, value: "Australia" },
-  { key: 7, value: "Antarctica" },
+  { key: 7, value: "Antarctica" }
 ]
 
 export default function UploadProductPage(props) {
 
   const [TitleValue, setTitleValue] = useState("");
   const [DescriptionValue, setDescriptionValue] = useState("");
-  const [PriceValue, setPriceValue] = useState("");
-  const [ContinentValue, setContinentValue] = useState(1);
+  const [PriceValue, setPriceValue] = useState(0);
+  const [ContinentValue, setContinentValue] = useState(1)
   const [Images, setImages] = useState([]);
 
   const onTitleChange = (event) => {
-    setTitleValue(event.currentTarget.value);
+    setTitleValue(event.target.value);
   }
 
   const onDescriptionChange = (event) => {
-    setDescriptionValue(event.currentTarget.value);
+    setDescriptionValue(event.target.value);
   }
 
   const onPriceChange = (event) => {
-    setPriceValue(event.currentTarget.value);
+    setPriceValue(event.target.value);
   }
 
-  const onContinentsSelect = (event) => {
-    setContinentValue(event.currentTarget.value);
+  const onContinentsSelectChange = (event) => {
+    setContinentValue(event.target.value);
   }
 
   const updateImages = (newImages) => {
@@ -47,7 +47,10 @@ export default function UploadProductPage(props) {
   const onSubmit = (event) => {
     event.preventDefault();
 
-    // TODO: add validate to Submit method
+    if (!TitleValue || !DescriptionValue || !PriceValue ||
+      !ContinentValue || !Images) {
+      return alert('fill all the fields first!')
+    }
 
     const variables = {
       writer: props.user.userData._id,
@@ -79,36 +82,30 @@ export default function UploadProductPage(props) {
         {/* DropZone */}
         <FileUpload refreshFunction={updateImages}/>
 
-        <br />
-        <br />
+        <br /><br />
         <label>Title</label>
         <Input
           onChange={onTitleChange}
           value={TitleValue}
         />
-        <br />
-        <br />
+        <br /><br />
         <label>Description</label>
         <TextArea 
           onChange={onDescriptionChange}
           value={DescriptionValue}
         />
-        <br />
-        <br />
+        <br /><br />
         <label>Price ($)</label>
         <Input
           onChange={onPriceChange}
           value={PriceValue}
           type='number'
         />
-        <select onChange={onContinentsSelect}>
-          {
-            Contitnents.map(item => 
-              <option key={item.key} value={item.value}>
-                { item.value }
-              </option>
-            ) 
-          }
+        <br /><br />
+        <select onChange={onContinentsSelectChange}>
+            {Continents.map(item => (
+              <option key={item.key} value={item.key}>{item.value}</option>
+            ))}
         </select>
         <br />
         <br />

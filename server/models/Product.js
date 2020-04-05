@@ -9,7 +9,7 @@ const productSchema = mongoose.Schema({
   },
   title: {
     type: String,
-    maxlength: 50,
+    maxlength: 50,   
   },
   description: {
     type: String,
@@ -36,6 +36,17 @@ const productSchema = mongoose.Schema({
     default: 0,
   },
 }, { timestamps: true })
+
+productSchema.index({
+    title: 'text',
+    description: 'text',
+  }, {
+    weight: {
+      title: 5,
+      description: 1
+    }
+  }
+)
 
 const Product = mongoose.model('Product', productSchema);
 
